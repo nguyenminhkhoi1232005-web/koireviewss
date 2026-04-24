@@ -137,6 +137,18 @@ def get_user_orders():
     conn.close()
     return jsonify([dict(o) for o in orders])
 
+@app.route('/api/orders/<int:id>/status', methods=['PUT'])
+def update_order_status(id):
+    data = request.json
+    status = data.get('status')
+    if not status:
+        return jsonify({"message": "Status is required"}), 400
+    conn = get_db_connection()
+    conn.execute('UPDATE orders SET status = ? WHERE id = ?', (status, id))
+    conn.commit()
+    conn.close()
+    return jsonify({"message": "Order status updated successfully"})
+
 # Reviews API
 @app.route('/api/reviews', methods=['GET'])
 def get_reviews():

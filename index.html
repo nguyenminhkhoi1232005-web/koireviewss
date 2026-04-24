@@ -1855,9 +1855,36 @@
         <span id="notification-msg">Thông báo</span>
     </div>
 
+    <!-- Review Modal -->
+    <div class="auth-modal" id="review-modal" style="z-index:3100;">
+        <div class="auth-content">
+            <i class="fa-solid fa-xmark close-checkout" onclick="closeReviewModal()" style="position:absolute; right:25px; top:25px; cursor:pointer; color:var(--gray-600);"></i>
+            <h3 style="margin-bottom:5px;">Đánh giá sản phẩm</h3>
+            <p id="review-product-name" style="color:var(--primary-color); font-weight:600; margin-bottom:15px;"></p>
+            <form id="review-form" style="display:flex; flex-direction:column; gap:15px;">
+                <div>
+                    <label style="font-weight:500; font-size:0.9rem;">Chọn số sao</label>
+                    <div id="star-rating" style="display:flex; gap:8px; margin-top:8px; font-size:2rem;">
+                        <span class="star-btn" onclick="setStarRating(1)" style="cursor:pointer; color:#ccc;">★</span>
+                        <span class="star-btn" onclick="setStarRating(2)" style="cursor:pointer; color:#ccc;">★</span>
+                        <span class="star-btn" onclick="setStarRating(3)" style="cursor:pointer; color:#ccc;">★</span>
+                        <span class="star-btn" onclick="setStarRating(4)" style="cursor:pointer; color:#ccc;">★</span>
+                        <span class="star-btn" onclick="setStarRating(5)" style="cursor:pointer; color:#ccc;">★</span>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>Nhận xét của bạn</label>
+                    <textarea id="review-comment" rows="3" placeholder="Sản phẩm rất tốt, giao hàng nhanh..."></textarea>
+                </div>
+                <button type="submit" class="btn-primary">Gửi đánh giá</button>
+            </form>
+        </div>
+    </div>
+
     <script>
         // --- API Config ---
         const API_URL = '/api';
+
 
         // --- Data State ---
         let allProducts = [];
@@ -2027,18 +2054,34 @@
                         if (orders.length === 0) {
                             container.innerHTML = '<p style="color:var(--gray-600); text-align:center;">Chưa có đơn hàng nào.</p>';
                         } else {
-                            container.innerHTML = orders.map(o => `
+                        container.innerHTML = orders.map(o => {
+                            let statusColor = 'orange';
+                            if (o.status === 'Đang giao') statusColor = 'blue';
+                            if (o.status === 'Hoàn thành') statusColor = 'green';
+                            if (o.status === 'Đã hủy') statusColor = '#e53935';
+
+                            let actionBtn = '';
+                            if (o.status === 'Đang giao') {
+                                actionBtn = `<button onclick="confirmReceived(${o.id})" style="margin-top:8px; padding:6px 12px; background:#4CAF50; color:white; border:none; border-radius:8px; cursor:pointer; font-size:0.85rem;"><i class="fa-solid fa-box-open"></i> Đã nhận được hàng</button>`;
+                            } else if (o.status === 'Hoàn thành') {
+                                const items = typeof o.items === 'string' ? JSON.parse(o.items) : o.items;
+                                actionBtn = `<button onclick="openReviewModal(${o.id}, '${(items[0]?.name || '').replace(/'/g, '')}', ${items[0]?.id || 0})" style="margin-top:8px; padding:6px 12px; background:#6366f1; color:white; border:none; border-radius:8px; cursor:pointer; font-size:0.85rem;"><i class="fa-solid fa-star"></i> Đánh giá sản phẩm</button>`;
+                            }
+
+                            return `
                                 <div style="border:1px solid var(--gray-100); padding:10px; border-radius:8px; margin-bottom:10px;">
                                     <div style="display:flex; justify-content:space-between; margin-bottom:5px;">
                                         <strong>Đơn #${o.id}</strong>
                                         <span style="color:var(--primary-color); font-weight:bold;">${o.total_price.toLocaleString()}đ</span>
                                     </div>
                                     <div style="color:var(--gray-600); font-size:0.85rem;">
-                                        Trạng thái: <strong style="color:green;">${o.status}</strong><br>
+                                        Trạng thái: <strong style="color:${statusColor};">${o.status}</strong><br>
                                         Ngày: ${new Date(o.created_at).toLocaleString('vi-VN')}
                                     </div>
+                                    ${actionBtn}
                                 </div>
-                            `).join('');
+                            `;
+                        }).join('');
                         }
                     }).catch(err => {
                         const container = document.getElementById('user-orders-container');
@@ -2478,13 +2521,68 @@
                     document.getElementById('checkout-form-container').style.display = 'none';
                     document.getElementById('order-success-container').style.display = 'block';
                     showToast('Đã đặt hàng thành công!');
+                    // Clear cart after successful order
+                    cart = [];
+                    localStorage.removeItem('cart');
+                    renderCart();
                 }
             } catch (err) {
                 showNotification('Lỗi đặt hàng!', 'error');
             }
         });
 
+        window.confirmReceived = async function(orderId) {
+            if (!confirm('Bạn xác nhận đã nhận được hàng?')) return;
+            const res = await fetch(`${API_URL}/orders/${orderId}/status`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ status: 'Hoàn thành' })
+            });
+            if (res.ok) {
+                showNotification('Xác nhận nhận hàng thành công!');
+                updateUIForUser();
+            }
+        };
+
+        let reviewProductId = null;
+        window.openReviewModal = function(orderId, productName, productId) {
+            reviewProductId = productId;
+            document.getElementById('review-product-name').innerText = productName;
+            setStarRating(0);
+            document.getElementById('review-modal').classList.add('active');
+        };
+        window.closeReviewModal = function() {
+            document.getElementById('review-modal').classList.remove('active');
+        };
+
+        let selectedRating = 0;
+        window.setStarRating = function(rating) {
+            selectedRating = rating;
+            document.querySelectorAll('#star-rating .star-btn').forEach((s, i) => {
+                s.style.color = i < rating ? '#f59e0b' : '#ccc';
+            });
+        };
+
+        document.getElementById('review-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            if (selectedRating === 0) { alert('Vui lòng chọn số sao!'); return; }
+            await fetch(`${API_URL}/reviews`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    product_id: reviewProductId || 1,
+                    name: currentUser ? currentUser.name : 'Khách',
+                    rating: selectedRating,
+                    comment: document.getElementById('review-comment').value
+                })
+            });
+            closeReviewModal();
+            document.getElementById('review-form').reset();
+            showNotification('Cảm ơn bạn đã đánh giá!');
+        });
+
         const searchInput = document.querySelector('.search-container input');
+
         searchInput.addEventListener('input', (e) => {
             const term = e.target.value.toLowerCase();
             const cards = document.querySelectorAll('.product-card');
