@@ -119,13 +119,23 @@ def create_order():
     conn = get_db_connection()
     cursor = conn.cursor()
     cursor.execute('''
-        INSERT INTO orders (customer_name, customer_phone, customer_address, payment_method, total_price, items)
-        VALUES (?, ?, ?, ?, ?, ?)
-    ''', (data['name'], data['phone'], data['address'], data['paymentMethod'], data['total'], json.dumps(data['items'])))
+        INSERT INTO orders (user_email, customer_name, customer_phone, customer_address, payment_method, total_price, items)
+        VALUES (?, ?, ?, ?, ?, ?, ?)
+    ''', (data.get('user_email'), data['name'], data['phone'], data['address'], data['paymentMethod'], data['total'], json.dumps(data['items'])))
     conn.commit()
     order_id = cursor.lastrowid
     conn.close()
     return jsonify({"id": order_id, "message": "Order created successfully"}), 201
+
+@app.route('/api/user/orders', methods=['GET'])
+def get_user_orders():
+    email = request.args.get('email')
+    if not email:
+        return jsonify([]), 400
+    conn = get_db_connection()
+    orders = conn.execute('SELECT * FROM orders WHERE user_email = ? ORDER BY created_at DESC', (email,)).fetchall()
+    conn.close()
+    return jsonify([dict(o) for o in orders])
 
 # Reviews API
 @app.route('/api/reviews', methods=['GET'])

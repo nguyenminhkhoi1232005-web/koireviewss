@@ -1699,6 +1699,12 @@
                         </div>
                     </div>
 
+                    <div id="bank-transfer-info" style="display: none; background: #f8fafc; padding: 15px; border-radius: 12px; margin-bottom: 20px; text-align: center; border: 1px dashed var(--primary-color);">
+                        <p style="font-weight: 600; margin-bottom: 10px; color: var(--primary-color);">Quét mã QR để thanh toán</p>
+                        <img src="https://api.vietqr.io/image/970407-77777777777777-V2N2M9S.jpg?accountName=KOI%20STORE&amount=0&addInfo=Thanh%20toan" alt="QR Code" style="width: 150px; height: 150px; border-radius: 10px;">
+                        <p style="font-size: 0.9rem; margin-top: 10px;">Ngân hàng: <strong>VPBank</strong><br>STK: <strong>77777777777777</strong><br>Chủ TK: <strong>KOI STORE</strong></p>
+                    </div>
+
                     <button type="submit" class="send-btn" style="width: 100%;">
                         <i class="fa-solid fa-check-double"></i> Xác Nhận Đặt Hàng
                     </button>
@@ -1785,6 +1791,13 @@
                 <div style="display: flex; gap: 10px; margin-top: 20px;">
                     <button class="btn-primary" style="flex: 1; background: var(--gray-100); color: var(--secondary-color);" onclick="closeAuth.click()">Đóng</button>
                     <button class="btn-primary" id="logout-btn" style="flex: 1; background: #ff5252;">Đăng xuất</button>
+                </div>
+
+                <div style="margin-top: 25px; border-top: 1px solid var(--gray-100); padding-top: 20px;">
+                    <h4 style="margin-bottom: 10px;"><i class="fa-solid fa-box"></i> Lịch sử đơn hàng</h4>
+                    <div style="max-height: 200px; overflow-y: auto; font-size: 0.9rem;" id="user-orders-container">
+                        <p style="color:var(--gray-600); text-align:center;">Đang tải...</p>
+                    </div>
                 </div>
             </div>
         </div>
@@ -2004,6 +2017,34 @@
                 if (userProfileForm) userProfileForm.classList.add('active');
                 if (loginForm) loginForm.classList.remove('active');
                 if (registerForm) registerForm.classList.remove('active');
+
+                // Load user orders
+                fetch(`${API_URL}/user/orders?email=${currentUser.email}`)
+                    .then(res => res.json())
+                    .then(orders => {
+                        const container = document.getElementById('user-orders-container');
+                        if (!container) return;
+                        if (orders.length === 0) {
+                            container.innerHTML = '<p style="color:var(--gray-600); text-align:center;">Chưa có đơn hàng nào.</p>';
+                        } else {
+                            container.innerHTML = orders.map(o => `
+                                <div style="border:1px solid var(--gray-100); padding:10px; border-radius:8px; margin-bottom:10px;">
+                                    <div style="display:flex; justify-content:space-between; margin-bottom:5px;">
+                                        <strong>Đơn #${o.id}</strong>
+                                        <span style="color:var(--primary-color); font-weight:bold;">${o.total_price.toLocaleString()}đ</span>
+                                    </div>
+                                    <div style="color:var(--gray-600); font-size:0.85rem;">
+                                        Trạng thái: <strong style="color:green;">${o.status}</strong><br>
+                                        Ngày: ${new Date(o.created_at).toLocaleString('vi-VN')}
+                                    </div>
+                                </div>
+                            `).join('');
+                        }
+                    }).catch(err => {
+                        const container = document.getElementById('user-orders-container');
+                        if (container) container.innerHTML = '<p style="color:red; text-align:center;">Lỗi tải đơn hàng.</p>';
+                    });
+
             } else {
                 if (userInfo) userInfo.style.display = 'none';
                 if (userIcon) userIcon.style.display = 'block';
@@ -2045,6 +2086,11 @@
             const name = document.getElementById('reg-name').value;
             const email = document.getElementById('reg-email').value;
             const password = document.getElementById('reg-password').value;
+            
+            const submitBtn = registerForm.querySelector('button[type="submit"]');
+            const originalText = submitBtn.innerText;
+            submitBtn.innerText = 'Đang xử lý...';
+            submitBtn.disabled = true;
 
             try {
                 const res = await fetch(`${API_URL}/auth/register`, {
@@ -2054,6 +2100,7 @@
                 });
                 const data = await res.json();
                 if (res.ok) {
+                    alert('Đăng ký thành công! Vui lòng đăng nhập.');
                     showNotification('Đăng ký thành công!');
                     switchTab('login');
                     registerForm.reset();
@@ -2062,6 +2109,9 @@
                 }
             } catch (err) {
                 showNotification('Lỗi kết nối server!', 'error');
+            } finally {
+                submitBtn.innerText = originalText;
+                submitBtn.disabled = false;
             }
         });
 
@@ -2069,6 +2119,11 @@
             e.preventDefault();
             const email = document.getElementById('login-email').value;
             const password = document.getElementById('login-password').value;
+            
+            const submitBtn = loginForm.querySelector('button[type="submit"]');
+            const originalText = submitBtn.innerText;
+            submitBtn.innerText = 'Đang xử lý...';
+            submitBtn.disabled = true;
 
             try {
                 const res = await fetch(`${API_URL}/auth/login`, {
@@ -2081,6 +2136,7 @@
                     currentUser = data;
                     localStorage.setItem('currentUser', JSON.stringify(currentUser));
                     updateUIForUser();
+                    alert(`Đăng nhập thành công! Chào mừng ${data.name}.`);
                     showNotification(`Chào mừng ${data.name} trở lại!`);
                     confetti({
                         particleCount: 100,
@@ -2094,6 +2150,9 @@
                 }
             } catch (err) {
                 showNotification('Lỗi kết nối server!', 'error');
+            } finally {
+                submitBtn.innerText = originalText;
+                submitBtn.disabled = false;
             }
         });
 
@@ -2385,6 +2444,11 @@
         window.selectPaymentMethod = function(element, method) {
             document.querySelectorAll('.method-card').forEach(card => card.classList.remove('active'));
             element.classList.add('active');
+            
+            const bankInfo = document.getElementById('bank-transfer-info');
+            if (bankInfo) {
+                bankInfo.style.display = method === 'Bank' ? 'block' : 'none';
+            }
         }
 
         orderForm.addEventListener('submit', async (e) => {
@@ -2399,7 +2463,8 @@
                 address: document.getElementById('order-address').value,
                 paymentMethod: activeMethod,
                 total: total,
-                items: cart
+                items: cart,
+                user_email: currentUser ? currentUser.email : null
             };
 
             try {
