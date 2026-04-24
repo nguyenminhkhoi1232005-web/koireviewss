@@ -67,9 +67,9 @@ def init_db():
         cursor.executemany('INSERT INTO products (name, price, old_price, image, category, badge) VALUES (?, ?, ?, ?, ?, ?)', default_products)
 
     # Add default admin user if not exists
-    cursor.execute('SELECT COUNT(*) FROM users WHERE email = ?', ('admin@koistore.com',))
+    cursor.execute('SELECT COUNT(*) FROM users WHERE email = ?', ('koireviewss@gmail.com',))
     if cursor.fetchone()[0] == 0:
-        cursor.execute('INSERT INTO users (name, email, password, is_admin) VALUES (?, ?, ?, ?)', ('Quản trị viên', 'admin@koistore.com', 'admin123', 1))
+        cursor.execute('INSERT INTO users (name, email, password, is_admin) VALUES (?, ?, ?, ?)', ('Quản trị viên', 'koireviewss@gmail.com', 'Mot23456Khoi@', 1))
 
     conn.commit()
     conn.close()
