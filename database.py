@@ -67,6 +67,19 @@ def init_db():
         )
     ''')
 
+    # Automatically add missing columns for backward compatibility (e.g. on Render)
+    # Check if stock exists in products
+    try:
+        cursor.execute('ALTER TABLE products ADD COLUMN stock INTEGER DEFAULT 100')
+    except sqlite3.OperationalError:
+        pass # Column already exists
+        
+    # Check if user_email exists in orders
+    try:
+        cursor.execute('ALTER TABLE orders ADD COLUMN user_email TEXT')
+    except sqlite3.OperationalError:
+        pass # Column already exists
+
     # Check if products already exist
     cursor.execute('SELECT COUNT(*) FROM products')
     if cursor.fetchone()[0] == 0:
