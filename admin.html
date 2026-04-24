@@ -1,0 +1,436 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>KoiStore Admin Dashboard</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --primary-color: #6366f1;
+            --secondary-color: #0f172a;
+            --bg-color: #f8fafc;
+            --white: #ffffff;
+            --gray-100: #f1f5f9;
+            --gray-200: #e2e8f0;
+            --gray-600: #64748b;
+            --transition: all 0.3s ease;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Poppins', sans-serif; }
+        body { background-color: var(--bg-color); color: var(--secondary-color); display: flex; height: 100vh; overflow: hidden; }
+
+        .sidebar {
+            width: 260px;
+            background: var(--white);
+            border-right: 1px solid var(--gray-200);
+            display: flex;
+            flex-direction: column;
+        }
+
+        .sidebar-header {
+            padding: 20px;
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--primary-color);
+            border-bottom: 1px solid var(--gray-100);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .menu {
+            flex: 1;
+            padding: 20px 0;
+            list-style: none;
+        }
+
+        .menu li {
+            padding: 15px 20px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            color: var(--gray-600);
+            transition: var(--transition);
+            font-weight: 500;
+            border-left: 4px solid transparent;
+        }
+
+        .menu li:hover { background: var(--gray-100); color: var(--primary-color); }
+        .menu li.active { background: #eef2ff; color: var(--primary-color); border-left-color: var(--primary-color); }
+
+        .main-content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .topbar {
+            height: 70px;
+            background: var(--white);
+            border-bottom: 1px solid var(--gray-200);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 30px;
+        }
+
+        .content {
+            flex: 1;
+            padding: 30px;
+            overflow-y: auto;
+        }
+
+        .card { background: var(--white); border-radius: 12px; padding: 25px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); margin-bottom: 20px;}
+        .card-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+        
+        table { width: 100%; border-collapse: collapse; }
+        th, td { padding: 15px; text-align: left; border-bottom: 1px solid var(--gray-100); }
+        th { color: var(--gray-600); font-weight: 500; }
+        
+        .btn { padding: 8px 16px; border-radius: 8px; border: none; cursor: pointer; font-weight: 500; transition: var(--transition); }
+        .btn-primary { background: var(--primary-color); color: white; }
+        .btn-primary:hover { background: #4f46e5; }
+        .btn-danger { background: #ff4d4f; color: white; }
+        .btn-danger:hover { background: #ff7875; }
+        .btn-outline { background: transparent; border: 1px solid var(--gray-200); }
+        
+        form { display: flex; flex-direction: column; gap: 15px; }
+        label { font-size: 0.9rem; font-weight: 500; }
+        input, select, textarea { padding: 10px; border: 1px solid var(--gray-200); border-radius: 8px; outline: none; }
+        input:focus, select:focus, textarea:focus { border-color: var(--primary-color); }
+        
+        .modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); align-items: center; justify-content: center; z-index: 1000; }
+        .modal.active { display: flex; }
+        .modal-content { background: white; padding: 30px; border-radius: 12px; width: 100%; max-width: 500px; max-height: 90vh; overflow-y: auto; }
+        
+        .view-section { display: none; }
+        .view-section.active { display: block; }
+    </style>
+</head>
+<body>
+
+    <div class="sidebar">
+        <div class="sidebar-header">
+            <i class="fa-solid fa-basket-shopping"></i> KoiStore
+        </div>
+        <ul class="menu">
+            <li class="active" onclick="switchView('products')" id="menu-products"><i class="fa-solid fa-box"></i> Sản phẩm</li>
+            <li onclick="switchView('orders')" id="menu-orders"><i class="fa-solid fa-cart-flatbed"></i> Đơn hàng</li>
+            <li onclick="switchView('reviews')" id="menu-reviews"><i class="fa-solid fa-star"></i> Đánh giá</li>
+            <a href="/" style="text-decoration:none; display:block; margin-top: auto; padding: 20px;">
+                <li style="border:none;"><i class="fa-solid fa-arrow-left"></i> Trở về cửa hàng</li>
+            </a>
+        </ul>
+    </div>
+
+    <div class="main-content">
+        <div class="topbar">
+            <h2>Quản trị hệ thống</h2>
+            <div id="admin-user" style="font-weight:600; color:var(--primary-color);">Admin User</div>
+        </div>
+        
+        <div class="content">
+            <!-- Products View -->
+            <div class="view-section active" id="view-products">
+                <div class="card">
+                    <div class="card-header">
+                        <h3>Quản lý sản phẩm</h3>
+                        <button class="btn btn-primary" onclick="openProductModal()"><i class="fa-solid fa-plus"></i> Thêm sản phẩm</button>
+                    </div>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Sản phẩm</th>
+                                <th>Danh mục</th>
+                                <th>Giá (VNĐ)</th>
+                                <th>Tồn kho</th>
+                                <th>Thao tác</th>
+                            </tr>
+                        </thead>
+                        <tbody id="products-table"></tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Orders View -->
+            <div class="view-section" id="view-orders">
+                <div class="card">
+                    <div class="card-header">
+                        <h3>Quản lý đơn hàng</h3>
+                    </div>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Mã đơn</th>
+                                <th>Người nhận</th>
+                                <th>Tổng tiền</th>
+                                <th>Thanh toán</th>
+                                <th>Ngày đặt</th>
+                                <th>Trạng thái</th>
+                            </tr>
+                        </thead>
+                        <tbody id="orders-table"></tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Reviews View -->
+            <div class="view-section" id="view-reviews">
+                <div class="card">
+                    <div class="card-header">
+                        <h3>Quản lý đánh giá</h3>
+                    </div>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Sản phẩm</th>
+                                <th>Khách hàng</th>
+                                <th>Đánh giá</th>
+                                <th>Phản hồi</th>
+                                <th>Thao tác</th>
+                            </tr>
+                        </thead>
+                        <tbody id="reviews-table"></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Product Modal -->
+    <div class="modal" id="product-modal">
+        <div class="modal-content">
+            <div class="card-header">
+                <h3 id="modal-title">Thêm sản phẩm</h3>
+                <i class="fa-solid fa-xmark" style="cursor:pointer;" onclick="closeProductModal()"></i>
+            </div>
+            <form id="product-form" onsubmit="saveProduct(event)">
+                <input type="hidden" id="p-id">
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+                    <div style="grid-column: 1/-1;">
+                        <label>Tên sản phẩm</label>
+                        <input type="text" id="p-name" required>
+                    </div>
+                    <div>
+                        <label>Giá bán (VNĐ)</label>
+                        <input type="number" id="p-price" required>
+                    </div>
+                    <div>
+                        <label>Giá cũ (VNĐ)</label>
+                        <input type="number" id="p-oldprice">
+                    </div>
+                    <div>
+                        <label>Danh mục</label>
+                        <select id="p-category">
+                            <option>Điện thoại</option>
+                            <option>Laptop</option>
+                            <option>Âm thanh</option>
+                            <option>Đồng hồ</option>
+                            <option>Máy tính bảng</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label>Tồn kho</label>
+                        <input type="number" id="p-stock" required min="0">
+                    </div>
+                    <div style="grid-column: 1/-1;">
+                        <label>Link ảnh</label>
+                        <input type="text" id="p-image" required>
+                    </div>
+                </div>
+                <button type="submit" class="btn btn-primary" style="margin-top: 10px;">Lưu</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Review Reply Modal -->
+    <div class="modal" id="reply-modal">
+        <div class="modal-content">
+            <div class="card-header">
+                <h3>Phản hồi đánh giá</h3>
+                <i class="fa-solid fa-xmark" style="cursor:pointer;" onclick="document.getElementById('reply-modal').classList.remove('active')"></i>
+            </div>
+            <form onSubmit="submitReply(event)">
+                <input type="hidden" id="r-id">
+                <p style="color: var(--gray-600); font-size: 0.9rem; margin-bottom: 10px;"><strong id="r-user"></strong> ráp: <em id="r-comment"></em></p>
+                <textarea id="r-reply" rows="4" placeholder="Nhập phản hồi của bạn..." required></textarea>
+                <button type="submit" class="btn btn-primary">Gửi phản hồi</button>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        const API_URL = '/api';
+        let currentUser = JSON.parse(localStorage.getItem('currentUser')) || null;
+
+        // Security check
+        if (!currentUser || (currentUser.email !== 'koireviewss@gmail.com' && !currentUser.is_admin)) {
+            alert('Bạn không có quyền truy cập trang này!');
+            window.location.href = '/';
+        } else {
+            document.getElementById('admin-user').innerText = currentUser.name + " (Admin)";
+        }
+
+        function switchView(view) {
+            document.querySelectorAll('.menu li').forEach(li => li.classList.remove('active'));
+            document.getElementById('menu-' + view).classList.add('active');
+            
+            document.querySelectorAll('.view-section').forEach(sec => sec.classList.remove('active'));
+            document.getElementById('view-' + view).classList.add('active');
+
+            if(view === 'products') loadProducts();
+            if(view === 'orders') loadOrders();
+            if(view === 'reviews') loadReviews();
+        }
+
+        // --- Products ---
+        let allProducts = [];
+        async function loadProducts() {
+            try {
+                const res = await fetch(API_URL + '/products');
+                allProducts = await res.json();
+                document.getElementById('products-table').innerHTML = allProducts.map(p => `
+                    <tr>
+                        <td>
+                            <div style="display:flex; align-items:center; gap:10px;">
+                                <img src="${p.image}" style="width:40px; height:40px; object-fit:contain;">
+                                <span>${p.name}</span>
+                            </div>
+                        </td>
+                        <td>${p.category}</td>
+                        <td>${p.price.toLocaleString()}đ</td>
+                        <td><strong>${p.stock}</strong></td>
+                        <td>
+                            <button class="btn btn-outline" onclick="openProductModal(${p.id})"><i class="fa-solid fa-pen"></i></button>
+                            <button class="btn btn-danger" onclick="deleteProduct(${p.id})"><i class="fa-solid fa-trash"></i></button>
+                        </td>
+                    </tr>
+                `).join('');
+            } catch (e) {
+                console.error("Lỗi tải sản phẩm", e);
+            }
+        }
+
+        function openProductModal(id = null) {
+            document.getElementById('product-form').reset();
+            if (id) {
+                const p = allProducts.find(x => x.id === id);
+                document.getElementById('modal-title').innerText = 'Sửa sản phẩm';
+                document.getElementById('p-id').value = p.id;
+                document.getElementById('p-name').value = p.name;
+                document.getElementById('p-price').value = p.price;
+                document.getElementById('p-oldprice').value = p.old_price || p.oldPrice || '';
+                document.getElementById('p-category').value = p.category;
+                document.getElementById('p-stock').value = p.stock !== undefined ? p.stock : 100;
+                document.getElementById('p-image').value = p.image;
+            } else {
+                document.getElementById('modal-title').innerText = 'Thêm sản phẩm';
+                document.getElementById('p-id').value = '';
+                document.getElementById('p-stock').value = 100;
+            }
+            document.getElementById('product-modal').classList.add('active');
+        }
+
+        function closeProductModal() {
+            document.getElementById('product-modal').classList.remove('active');
+        }
+
+        async function saveProduct(e) {
+            e.preventDefault();
+            const id = document.getElementById('p-id').value;
+            const data = {
+                name: document.getElementById('p-name').value,
+                price: parseInt(document.getElementById('p-price').value),
+                oldPrice: parseInt(document.getElementById('p-oldprice').value) || 0,
+                category: document.getElementById('p-category').value,
+                stock: parseInt(document.getElementById('p-stock').value),
+                image: document.getElementById('p-image').value
+            };
+
+            const url = id ? `${API_URL}/products/${id}` : `${API_URL}/products`;
+            const method = id ? 'PUT' : 'POST';
+
+            await fetch(url, {
+                method, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data)
+            });
+            closeProductModal();
+            loadProducts();
+        }
+
+        async function deleteProduct(id) {
+            if(confirm('Chắc chắn xóa?')) {
+                await fetch(`${API_URL}/products/${id}`, { method: 'DELETE' });
+                loadProducts();
+            }
+        }
+
+        // --- Orders ---
+        async function loadOrders() {
+            const res = await fetch(API_URL + '/orders');
+            const orders = await res.json();
+            document.getElementById('orders-table').innerHTML = orders.reverse().map(o => `
+                <tr>
+                    <td>#${o.id}</td>
+                    <td>
+                        <strong>${o.customer_name}</strong>
+                        <div style="font-size:0.8rem; color:var(--gray-600);">${o.customer_phone}</div>
+                    </td>
+                    <td style="color:var(--primary-color); font-weight:bold;">${o.total_price.toLocaleString()}đ</td>
+                    <td>${o.payment_method}</td>
+                    <td>${new Date(o.created_at).toLocaleString('vi-VN')}</td>
+                    <td><span style="color:green; font-weight:bold;">${o.status}</span></td>
+                </tr>
+            `).join('');
+        }
+
+        // --- Reviews ---
+        let allReviews = [];
+        async function loadReviews() {
+            const res = await fetch(API_URL + '/reviews');
+            allReviews = await res.json();
+            if (allReviews.length === 0) {
+                 document.getElementById('reviews-table').innerHTML = '<tr><td colspan="5" style="text-align:center;">Chưa có đánh giá nào.</td></tr>';
+                 return;
+            }
+            document.getElementById('reviews-table').innerHTML = allReviews.map(r => `
+                <tr>
+                    <td>${r.product_name || 'Sản phẩm ' + r.product_id}</td>
+                    <td>${r.user_name}</td>
+                    <td><span style="color:orange;">${'★'.repeat(r.rating)}${'☆'.repeat(5-r.rating)}</span><br><small>${r.comment}</small></td>
+                    <td>${r.reply ? r.reply : '<em style="color:gray">Chưa phản hồi</em>'}</td>
+                    <td>
+                        <button class="btn btn-outline" onclick="openReplyModal(${r.id})"><i class="fa-solid fa-reply"></i> P.Hồi</button>
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        function openReplyModal(id) {
+            const r = allReviews.find(x => x.id === id);
+            document.getElementById('r-id').value = r.id;
+            document.getElementById('r-user').innerText = r.user_name;
+            document.getElementById('r-comment').innerText = r.comment || '(Không có nội dung)';
+            document.getElementById('r-reply').value = r.reply || '';
+            document.getElementById('reply-modal').classList.add('active');
+        }
+
+        async function submitReply(e) {
+            e.preventDefault();
+            const id = document.getElementById('r-id').value;
+            const reply = document.getElementById('r-reply').value;
+            await fetch(`${API_URL}/reviews/${id}/reply`, {
+                method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ reply })
+            });
+            document.getElementById('reply-modal').classList.remove('active');
+            loadReviews();
+        }
+
+        // Init
+        loadProducts();
+    </script>
+</body>
+</html>

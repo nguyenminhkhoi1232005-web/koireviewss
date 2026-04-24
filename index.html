@@ -1777,7 +1777,7 @@
                 
                 <!-- Admin Access Link -->
                 <div id="admin-link-container" style="display: none;">
-                    <a href="javascript:void(0)" onclick="openAdminDashboard()">
+                    <a href="/admin">
                         <i class="fa-solid fa-gauge-high"></i> Quản trị hệ thống
                     </a>
                 </div>
@@ -1790,97 +1790,7 @@
         </div>
     </div>
 
-    <!-- Admin Dashboard Modal -->
-    <div class="admin-modal" id="admin-modal">
-        <div class="admin-header">
-            <div class="logo">
-                <i class="fa-solid fa-basket-shopping"></i>
-                KoiStore Admin
-            </div>
-            <button class="btn-primary" onclick="closeAdminDashboard()" style="padding: 10px 25px;">
-                Quay lại Store
-            </button>
-        </div>
-        
-        <div class="admin-container">
-            <div class="admin-sidebar">
-                <div class="sidebar-item active" data-view="products" onclick="switchAdminView('products')">
-                    <i class="fa-solid fa-box"></i>
-                    Quản lý sản phẩm
-                </div>
-                <div class="sidebar-item" data-view="orders" onclick="switchAdminView('orders')">
-                    <i class="fa-solid fa-cart-flatbed"></i>
-                    Quản lý đơn hàng
-                </div>
-                <div class="sidebar-item" data-view="stats" onclick="switchAdminView('stats')">
-                    <i class="fa-solid fa-chart-line"></i>
-                    Thống kê
-                </div>
-            </div>
-            
-            <div class="admin-main">
-                <!-- Products View -->
-                <div class="admin-view active" id="admin-view-products">
-                    <div class="admin-card">
-                        <div class="admin-card-header">
-                            <h3>Danh sách sản phẩm</h3>
-                            <button class="btn-primary" onclick="openProductForm()" style="padding: 10px 20px; font-size: 0.9rem;">
-                                <i class="fa-solid fa-plus"></i> Thêm sản phẩm
-                            </button>
-                        </div>
-                        <div class="admin-table-container">
-                            <table class="admin-table">
-                               <thead>
-                                   <tr>
-                                       <th>Sản phẩm</th>
-                                       <th>Danh mục</th>
-                                       <th>Giá hiện tại</th>
-                                       <th>Thao tác</th>
-                                   </tr>
-                               </thead>
-                               <tbody id="admin-product-list">
-                                   <!-- Admin products injected by JS -->
-                               </tbody>
-                            </table>
-                        </div>
-                    </div>
-                </div>
 
-                <!-- Orders View -->
-                <div class="admin-view" id="admin-view-orders" style="display: none;">
-                    <div class="admin-card">
-                        <div class="admin-card-header">
-                            <h3>Theo dõi đơn hàng</h3>
-                        </div>
-                        <div class="admin-table-container">
-                            <table class="admin-table">
-                               <thead>
-                                   <tr>
-                                       <th>Mã đơn</th>
-                                       <th>Khách hàng</th>
-                                       <th>Ngày đặt</th>
-                                       <th>Tổng tiền</th>
-                                       <th>Trạng thái</th>
-                                   </tr>
-                               </thead>
-                               <tbody id="admin-order-list">
-                                   <!-- Admin orders injected by JS -->
-                               </tbody>
-                            </table>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Stats View placeholder -->
-                <div class="admin-view" id="admin-view-stats" style="display: none;">
-                    <div class="admin-card">
-                        <h3>Thống kê kinh doanh</h3>
-                        <p style="color: var(--gray-600); margin-top: 15px;">Dữ liệu thống kê đang được phát triển...</p>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
 
     <!-- Product Form Modal (Sub-modal) -->
     <div class="auth-modal" id="product-form-modal" style="z-index: 3000;">

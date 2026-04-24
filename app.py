@@ -15,6 +15,10 @@ init_db()
 def index():
     return send_from_directory('.', 'index.html')
 
+@app.route('/admin')
+def admin():
+    return send_from_directory('.', 'admin.html')
+
 @app.route('/assets/<path:path>')
 def send_assets(path):
     return send_from_directory('assets', path)
@@ -35,9 +39,9 @@ def add_product():
     conn = get_db_connection()
     cursor = conn.cursor()
     cursor.execute('''
-        INSERT INTO products (name, price, old_price, image, category, badge)
-        VALUES (?, ?, ?, ?, ?, ?)
-    ''', (data['name'], data['price'], data.get('oldPrice'), data['image'], data['category'], data.get('badge')))
+        INSERT INTO products (name, price, old_price, image, category, badge, stock)
+        VALUES (?, ?, ?, ?, ?, ?, ?)
+    ''', (data['name'], data['price'], data.get('oldPrice'), data['image'], data['category'], data.get('badge'), data.get('stock', 100)))
     conn.commit()
     new_id = cursor.lastrowid
     conn.close()
@@ -49,9 +53,9 @@ def update_product(id):
     conn = get_db_connection()
     conn.execute('''
         UPDATE products 
-        SET name = ?, price = ?, old_price = ?, image = ?, category = ?, badge = ?
+        SET name = ?, price = ?, old_price = ?, image = ?, category = ?, badge = ?, stock = ?
         WHERE id = ?
-    ''', (data['name'], data['price'], data.get('oldPrice'), data['image'], data['category'], data.get('badge'), id))
+    ''', (data['name'], data['price'], data.get('oldPrice'), data['image'], data['category'], data.get('badge'), data.get('stock', 100), id))
     conn.commit()
     conn.close()
     return jsonify({"message": "Product updated successfully"})
@@ -114,6 +118,41 @@ def create_order():
     order_id = cursor.lastrowid
     conn.close()
     return jsonify({"id": order_id, "message": "Order created successfully"}), 201
+
+# Reviews API
+@app.route('/api/reviews', methods=['GET'])
+def get_reviews():
+    conn = get_db_connection()
+    reviews = conn.execute('''
+        SELECT r.*, p.name as product_name 
+        FROM reviews r 
+        LEFT JOIN products p ON r.product_id = p.id
+    ''').fetchall()
+    conn.close()
+    return jsonify([dict(r) for r in reviews])
+
+@app.route('/api/reviews', methods=['POST'])
+def add_review():
+    data = request.json
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    cursor.execute('''
+        INSERT INTO reviews (product_id, user_name, rating, comment)
+        VALUES (?, ?, ?, ?)
+    ''', (data['product_id'], data['name'], data['rating'], data['comment']))
+    conn.commit()
+    rev_id = cursor.lastrowid
+    conn.close()
+    return jsonify({"id": rev_id, "message": "Review added successfully"}), 201
+
+@app.route('/api/reviews/<int:id>/reply', methods=['PUT'])
+def reply_review(id):
+    data = request.json
+    conn = get_db_connection()
+    conn.execute('UPDATE reviews SET reply = ? WHERE id = ?', (data['reply'], id))
+    conn.commit()
+    conn.close()
+    return jsonify({"message": "Replied successfully"})
 
 if __name__ == '__main__':
     app.run(debug=True, port=5000)
