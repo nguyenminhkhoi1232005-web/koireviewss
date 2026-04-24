@@ -372,7 +372,21 @@
         async function loadOrders() {
             const res = await fetch(API_URL + '/orders');
             const orders = await res.json();
-            document.getElementById('orders-table').innerHTML = orders.reverse().map(o => `
+            document.getElementById('orders-table').innerHTML = orders.reverse().map(o => {
+                let statusColor = 'orange';
+                if (o.status === 'Đang giao') statusColor = 'blue';
+                if (o.status === 'Hoàn thành') statusColor = 'green';
+                if (o.status === 'Đã hủy') statusColor = 'red';
+                
+                let actionButtons = '';
+                if (o.status === 'Đang xử lý') {
+                    actionButtons = `
+                        <button class="btn btn-primary" onclick="updateOrderStatus(${o.id}, 'Đang giao')" style="padding: 5px 10px; font-size: 0.85rem;"><i class="fa-solid fa-check"></i> Duyệt</button>
+                        <button class="btn btn-danger" onclick="updateOrderStatus(${o.id}, 'Đã hủy')" style="padding: 5px 10px; font-size: 0.85rem;"><i class="fa-solid fa-xmark"></i> Hủy</button>
+                    `;
+                }
+
+                return `
                 <tr>
                     <td>#${o.id}</td>
                     <td>
@@ -382,9 +396,23 @@
                     <td style="color:var(--primary-color); font-weight:bold;">${o.total_price.toLocaleString()}đ</td>
                     <td>${o.payment_method}</td>
                     <td>${new Date(o.created_at).toLocaleString('vi-VN')}</td>
-                    <td><span style="color:green; font-weight:bold;">${o.status}</span></td>
+                    <td>
+                        <span style="color:${statusColor}; font-weight:bold; margin-bottom:5px; display:block;">${o.status}</span>
+                        <div style="display:flex; gap:5px;">${actionButtons}</div>
+                    </td>
                 </tr>
-            `).join('');
+            `}).join('');
+        }
+
+        async function updateOrderStatus(id, status) {
+            if (confirm(`Chuyển trạng thái đơn hàng #${id} thành "${status}"?`)) {
+                await fetch(`${API_URL}/orders/${id}/status`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ status })
+                });
+                loadOrders();
+            }
         }
 
         // --- Reviews ---
