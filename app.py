@@ -89,13 +89,21 @@ def register():
 def login():
     data = request.json
     conn = get_db_connection()
+    
+    # Check if email exists
+    user_exists = conn.execute('SELECT * FROM users WHERE email = ?', (data['email'],)).fetchone()
+    if not user_exists:
+        conn.close()
+        return jsonify({"message": "Tài khoản chưa được đăng ký!"}), 401
+        
+    # Check if password is correct
     user = conn.execute('SELECT * FROM users WHERE email = ? AND password = ?', 
                         (data['email'], data['password'])).fetchone()
     conn.close()
     
     if user:
         return jsonify(dict(user))
-    return jsonify({"message": "Invalid credentials"}), 401
+    return jsonify({"message": "Mật khẩu không chính xác!"}), 401
 
 # Orders API
 @app.route('/api/orders', methods=['GET'])
